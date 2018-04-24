@@ -1,0 +1,22 @@
+{
+  "name": "camerascrape",
+  "version": "1.0.0",
+  "description": "Ebay scraper for good camera deals",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kyle S",
+  "license": "ISC",
+  "dependencies": {
+    "accounting": "^0.4.1",
+    "cheerio": "^1.0.0-rc.2",
+    "express": "^4.16.2",
+    "jade": "^1.11.0",
+    "md5": "^2.2.1",
+    "mysql": "^2.15.0",
+    "neo-classify": "^0.1.1",
+    "neo4j": "^2.0.0-RC2",
+    "rss-parser": "^3.1.2"
+  }
+}

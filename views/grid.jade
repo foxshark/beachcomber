@@ -1,0 +1,29 @@
+html
+  head
+    title Camera Scrape
+    link(href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm", crossorigin="anonymous", rel='stylesheet')
+    //-link(href="/scripts/game_base.less", rel="stylesheet")
+    link(href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/3.4.6/css/tabulator.min.css" rel="stylesheet")
+    link(href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" rel="stylesheet")
+
+    
+  body
+    div#table-heading
+      h1 Scrape: newest 
+    div#listing-table
+    div#dialog-form
+      p.validateTips All form fields are required.
+      form
+        fieldset
+          label(for="name") Name
+          input(type="text" name="name" id="name" value="Jane Smith").text.ui-widget-content.ui-corner-all
+          label(for="email") Email
+          input(type="text" name="email" id="email" value="jane@smith.com").text.ui-widget-content.ui-corner-all
+
+
+script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js")
+script(src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js")
+//-script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery-color/2.1.2/jquery.color.js")
+script(src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/3.4.6/js/tabulator.min.js")
+//-script(src="/scripts/accounting.min.js")
+script(src="/scripts/gridview.js")
