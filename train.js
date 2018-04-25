@@ -13,21 +13,38 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
+var trainingItemQueue = [];
+
 	 
 connection.connect();
 getItemSet();
 getFeedSet();
 
 
+function workTrainingQueue()
+{
+	if(trainingItemQueue.length > 0 )
+	{
+		//console.log("working queue of: "+trainingItemQueue.length);
+		promptItemQuestion(trainingItemQueue.pop());
+	} else {
+		console.log("queue complete");
+		connection.end();
+		process.exit();
+	}
+}
+
 
 function promptItemQuestion(item)
 {
-	rl.question("Classify: " + item.title, trainItem + " ");
+	//console.log("q: " + item.title);
+	rl.question("Classify: " + item.title + " ", trainItem);
 }
 
 function trainItem(answer)
 {
 	console.log("a: "+answer);
+	workTrainingQueue();
 }
 
 
@@ -37,10 +54,14 @@ function getFeedSet()
 		if (error)  throw error;
 		//console.log(JSON.stringify(res));
 		console.table(res);
+		trainingItemQueue = res;
+		/*
 		res.forEach(function(item) {
 		  promptItemQuestion(item);
 		});
 		return res;
+		*/
+		workTrainingQueue();
 	});				
 }
 
