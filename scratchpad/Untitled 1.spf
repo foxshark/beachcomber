@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ContentFilters</key>
+	<dict/>
+	<key>auto_connect</key>
+	<true/>
+	<key>data</key>
+	<dict>
+		<key>connection</key>
+		<dict>
+			<key>database</key>
+			<string>camerascrape</string>
+			<key>host</key>
+			<string>127.0.0.1</string>
+			<key>kcid</key>
+			<string>-5967896925550896763</string>
+			<key>name</key>
+			<string>XAMPP</string>
+			<key>rdbms_type</key>
+			<string>mysql</string>
+			<key>sslCACertFileLocation</key>
+			<string></string>
+			<key>sslCACertFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslCertificateFileLocation</key>
+			<string></string>
+			<key>sslCertificateFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslKeyFileLocation</key>
+			<string></string>
+			<key>sslKeyFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>type</key>
+			<string>SPTCPIPConnection</string>
+			<key>useSSL</key>
+			<integer>0</integer>
+			<key>user</key>
+			<string>root</string>
+		</dict>
+		<key>session</key>
+		<dict>
+			<key>connectionEncoding</key>
+			<string>latin1</string>
+			<key>contentFilter</key>
+			<dict/>
+			<key>contentPageNumber</key>
+			<integer>1</integer>
+			<key>contentSelection</key>
+			<data>
+			YnBsaXN0MDDUAQIDBAUGNjdYJHZlcnNpb25YJG9iamVjdHNZJGFy
+			Y2hpdmVyVCR0b3ASAAGGoK0HCBUWFxgZHSQoLDA0VSRudWxs0wkK
+			CwwQFFdOUy5rZXlzWk5TLm9iamVjdHNWJGNsYXNzow0OD4ACgAOA
+			BKMREhOABYAGgAiADFR0eXBlVHJvd3NUa2V5c18QJlNlbGVjdGlv
+			bkRldGFpbFR5cGVQcmltYXJ5S2V5ZWREZXRhaWxz0wkKCxobHKCg
+			gAfSHh8gIVokY2xhc3NuYW1lWCRjbGFzc2VzXxATTlNNdXRhYmxl
+			RGljdGlvbmFyeaMgIiNcTlNEaWN0aW9uYXJ5WE5TT2JqZWN00goL
+			JSehJoAJgAvSCykqK1lOUy5zdHJpbmeAClJpZNIeHy0uXxAPTlNN
+			dXRhYmxlU3RyaW5noy0vI1hOU1N0cmluZ9IeHzEyXk5TTXV0YWJs
+			ZUFycmF5ozEzI1dOU0FycmF50h4fIjWiIiNfEA9OU0tleWVkQXJj
+			aGl2ZXLRODlUZGF0YYABAAgAEQAaACMALQAyADcARQBLAFIAWgBl
+			AGwAcAByAHQAdgB6AHwAfgCAAIIAhwCMAJEAugDBAMIAwwDFAMoA
+			1QDeAPQA+AEFAQ4BEwEVARcBGQEeASgBKgEtATIBRAFIAVEBVgFl
+			AWkBcQF2AXkBiwGOAZMAAAAAAAACAQAAAAAAAAA6AAAAAAAAAAAA
+			AAAAAAABlQ==
+			</data>
+			<key>contentSortColIsAsc</key>
+			<true/>
+			<key>contentViewport</key>
+			<string>{{1830, 0}, {1075, 541}}</string>
+			<key>isToolbarVisible</key>
+			<true/>
+			<key>queries</key>
+			<string>SELECT count(*) as c, feed_id
+FROM feedposts
+GROUP BY feed_id;
+
+SELECT count(*) as c, source_feed
+FROM feedposts_items
+GROUP BY source_feed;
+
+SELECT title, price, guid
+FROM feedposts 
+WHERE feed_id = 4
+ORDER BY id DESC
+LIMIT 40;
+
+
+SELECT title, SUBSTRING_INDEX(LCASE(REPLACE(title,"-","")), "for", 1) AS keywords, price, guid
+FROM feedposts 
+WHERE feed_id = 4
+AND title like "%for%"
+ORDER BY id DESC
+LIMIT 40;
+
+
+SELECT title, price, guid
+FROM feedposts
+WHERE title LIKE "%m7%"
+ORDER BY price DESC
+LIMIT 40;
+
+
+SELECT id
+FROM feedposts
+WHERE feed_id = 4
+AND title like "%coolscan 5000%";
+
+
+SELECT training_set.item_id as item_id, feedposts.title as title FROM feedposts, training_set WHERE feedposts.id = training_set.feedpost_id;
+
+INSERT INTO feedposts_items 
+(feedpost_id, item_id, source_feed)
+SELECT feedposts.id, sql_training.item_id, feed_id
+FROM feedposts, sql_training
+#WHERE feedposts.title like concat("%", sql_training.keyword, "%");
+WHERE SUBSTRING_INDEX(LCASE(REPLACE(feedposts.title,"-","")), "for", 1) like concat("%", sql_training.keyword, "%");
+
+/*
+REPLACE INTO items
+(id, name)
+SELECT item_id, keyword
+FROM sql_training;
+*/
+
+
+#################
+;
+
+
+INSERT INTO feedposts_items 
+(feedpost_id, item_id, source_feed)
+SELECT feedposts.id, items.id as item_id, items.feed_id
+FROM feedposts, items
+WHERE SUBSTRING_INDEX(LCASE(REPLACE(CONCAT(" ", feedposts.title, " "),"-","")), "for", 1) like CONCAT("% ", items.name, " %")
+AND feedposts.feed_id = items.feed_id;	
+
+
+REPLACE INTO item_values
+(item_id, avg_price, quantity)
+SELECT item_id, AVG(price) as avg_price, count(*) as qty
+FROM feedposts, feedposts_items
+WHERE feedposts.id = feedposts_items.feedpost_id
+GROUP BY item_id;
+
+SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 2
+AND brand = "nikon"
+#AND name = "a7"
+GROUP BY feedposts.id;
+
+SELECT feedposts.id, items.name, price, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 2;
+
+
+</string>
+			<key>table</key>
+			<string>feedposts</string>
+			<key>view</key>
+			<string>SP_VIEW_CUSTOMQUERY</string>
+			<key>windowVerticalDividerPosition</key>
+			<real>200</real>
+		</dict>
+	</dict>
+	<key>encrypted</key>
+	<false/>
+	<key>format</key>
+	<string>connection</string>
+	<key>queryFavorites</key>
+	<array/>
+	<key>queryHistory</key>
+	<array>
+		<string>SELECT title, price, guid
+FROM feedposts 
+WHERE feed_id = 4
+ORDER BY id DESC
+LIMIT 40</string>
+		<string>SELECT count(*) as c, feed_id
+FROM feedposts
+GROUP BY feed_id</string>
+		<string>SELECT count(*) as c, feed_id
+FROM feedposts
+WHERE soldtime IS NOT NULL
+GROUP BY feed_id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 2
+AND brand = "nikon"
+#AND name = "a7"
+GROUP BY feedposts.id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 2
+AND brand = "Sony"
+#AND name = "a7"
+GROUP BY feedposts.id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 2
+#AND brand = "Sony"
+#AND name = "a7"
+GROUP BY feedposts.id</string>
+		<string>SELECT feedposts.id, items.name, price, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 2</string>
+		<string>REPLACE INTO item_values
+(item_id, avg_price, quantity)
+SELECT item_id, AVG(price) as avg_price, count(*) as qty
+FROM feedposts, feedposts_items
+WHERE feedposts.id = feedposts_items.feedpost_id
+GROUP BY item_id</string>
+		<string>INSERT INTO feedposts_items 
+(feedpost_id, item_id, source_feed)
+SELECT feedposts.id, items.id as item_id, items.feed_id
+FROM feedposts, items
+WHERE SUBSTRING_INDEX(LCASE(REPLACE(CONCAT(" ", feedposts.title, " "),"-","")), "for", 1) like CONCAT("% ", items.name, " %")
+AND feedposts.feed_id = items.feed_id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 1
+AND brand = "Sony"
+AND name = "a7"
+GROUP BY feedposts.id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 1
+AND brand = "Leica"
+AND name = "m7"
+GROUP BY feedposts.id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 1
+AND brand = "Leica"
+AND name = "m6"
+GROUP BY feedposts.id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 1
+AND brand = "Leica"
+GROUP BY feedposts.id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 1
+GROUP BY feedposts.id</string>
+		<string>SELECT feedposts.id, items.brand, items.name, price, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 3</string>
+		<string>SELECT feedposts.id, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 1
+GROUP BY feedposts.id</string>
+		<string>SELECT title, price, guid
+FROM feedposts
+WHERE title LIKE "%m7%"
+ORDER BY price DESC
+LIMIT 40</string>
+		<string>SELECT feedposts.id, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 3
+GROUP BY feedposts.id</string>
+		<string>INSERT INTO feedposts_items 
+(feedpost_id, item_id, source_feed)
+SELECT feedposts.id, items.id as item_id, items.feed_id
+FROM feedposts, items
+WHERE SUBSTRING_INDEX(LCASE(REPLACE(feedposts.title,"-","")), "for", 1) like concat("% ", items.name, " %")
+AND feedposts.feed_id = items.feed_id</string>
+		<string>SELECT feedposts.id, items.name, price, avg_price, (price - avg_price) AS price_delta, title, guid
+FROM feedposts, feedposts_items, items, item_values
+WHERE feedposts.id = feedposts_items.feedpost_id
+AND items.id = feedposts_items.item_id
+AND item_values.item_id = items.id
+AND feedposts.feed_id = 3
+GROUP BY items.id</string>
+	</array>
+	<key>rdbms_type</key>
+	<string>mysql</string>
+	<key>rdbms_version</key>
+	<string>10.1.21-MariaDB</string>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>

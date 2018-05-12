@@ -23,8 +23,9 @@ const RSS_BIN_SCANNERS = 'https://www.ebay.com/sch/i.html?_odkw=%28coolscan%2C+r
 
 
 //sold feeds
-const RSS_BIN_sold_url ='https://www.ebay.com/sch/Film-Cameras/15230/i.html?_from=R40&LH_BIN=1&_sop=10&LH_PrefLoc=1&LH_Complete=1&LH_Sold=1&rt=nc&_trksid=p2045573.m1684&_rss=1';
+const RSS_BIN_sold_url = 'https://www.ebay.com/sch/Film-Cameras/15230/i.html?_from=R40&LH_BIN=1&_sop=10&LH_PrefLoc=1&LH_Complete=1&LH_Sold=1&rt=nc&_trksid=p2045573.m1684&_rss=1';
 const RSS_ACT_sold_url = 'https://www.ebay.com/sch/Film-Cameras/15230/i.html?_from=R40&_sop=10&LH_Complete=1&LH_Sold=1&LH_PrefLoc=1&rt=nc&LH_Auction=1&_rss=1';
+const RSS_GENERIC_SOLD = 'https://www.ebay.com/sch/i.html?_from=R40&_nkw=%28nikon%2C+canon%2C+sony%2C+fuji%2C+leica%2C+olympus%2C+panisonic%2C+mamiya%2C+pentax%2C+rolleiflex%2C+zeiss%2C+hasselblad%29&_sacat=625&LH_PrefLoc=1&LH_Sold=1&LH_Complete=1&_rss=1';
 
 var mysql      = require('mysql');
 var connection = mysql.createConnection({
@@ -53,21 +54,22 @@ function shortFeeds()
 {
 	scrapeForSaleFeed(RSS_BIN_FILM_CAMERA, 1);
 	scrapeForSaleFeed(RSS_BIN_LENS, 2);
+	getSoldFeed(RSS_GENERIC_SOLD);
 }
 
 function longFeeds()
 {
-	getSoldFeedBIN();
-	scrapeForSaleFeed(RSS_BIN_DIGITAL, 3)
+	//getSoldFeedBIN();
+	getSoldFeed(RSS_BIN_sold_url);
+	getSoldFeed(RSS_ACT_sold_url);
+	scrapeForSaleFeed(RSS_BIN_DIGITAL, 3);
 	scrapeForSaleFeed(RSS_BIN_SCANNERS, 4);
 }
 
 
-function scrapeForSaleFeed(feedURL, feedID)
-{
+function scrapeForSaleFeed(feedURL, feedID) {
 	var exampleContent = "";
 	parser.parseURL(feedURL, function(err, feed) {
-		//console.log(feed.title);
 		if (typeof feed === "undefined") {
 			console.log("feed returned undefined: " + feedURL);
 		} else {
@@ -78,7 +80,6 @@ function scrapeForSaleFeed(feedURL, feedID)
 					storage.push($(this).text());
 				});
 				$("img").each(function() {
-					//storage.push($(this).attr('src'));
 					entry.image = $(this).attr('src');
 				});
 				entry.price = Accounting.unformat(storage[0]);
@@ -120,6 +121,33 @@ function storeFreshItem(entry, feed_id) {
 function getSoldFeedBIN() {
 	var exampleContent = "";
 	parser.parseURL(RSS_BIN_sold_url, function(err, feed) {
+		if (typeof feed === "undefined") {
+			console.log("feed returned undefined: " + feedURL);
+		} else {
+			feed.items.forEach(function(entry) { 
+				var storage = [];
+				var $ = cheerio.load(entry.content);
+				$("div").each(function() {
+					storage.push($(this).text());
+				});
+				$("img").each(function() {
+					//storage.push($(this).attr('src'));
+					entry.image = $(this).attr('src');
+				});
+				entry.price = Accounting.unformat(storage[0]);
+				markSold(entry);
+				exampleContent = JSON.stringify(entry);
+			});
+		}
+		//console.log(exampleContent);
+		var d = new Date;
+		console.log(d.toLocaleTimeString() + " SOLD Fetched feed " + feed.title + " with " + feed.items.length + " items");
+	});
+}
+
+function getSoldFeed(feedURL) {
+	var exampleContent = "";
+	parser.parseURL(feedURL, function(err, feed) {
 		//console.log(feed.title);
 		feed.items.forEach(function(entry) { 
 			var storage = [];
@@ -127,15 +155,9 @@ function getSoldFeedBIN() {
 			$("div").each(function() {
 				storage.push($(this).text());
 			});
-			$("img").each(function() {
-				//storage.push($(this).attr('src'));
-				entry.image = $(this).attr('src');
-			});
 			entry.price = Accounting.unformat(storage[0]);
 			markSold(entry);
-			exampleContent = JSON.stringify(entry);
 		});
-		//console.log(exampleContent);
 		var d = new Date;
 		console.log(d.toLocaleTimeString() + " SOLD Fetched feed " + feed.title + " with " + feed.items.length + " items");
 	});

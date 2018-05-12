@@ -2,6 +2,9 @@
 const console = require('better-console');
 const readline = require('readline');
 const mysql      = require('mysql');
+const natural = require('natural');
+
+const classifier = new natural.BayesClassifier();
 const connection = mysql.createConnection({
   host     : '127.0.0.1',
   user     : 'root',
@@ -17,8 +20,9 @@ var trainingItemQueue = [];
 
 	 
 connection.connect();
-getItemSet();
-getFeedSet();
+trainFromDB();
+//getItemSet();
+//getFeedSet();
 
 
 function workTrainingQueue()
@@ -38,15 +42,28 @@ function workTrainingQueue()
 function promptItemQuestion(item)
 {
 	//console.log("q: " + item.title);
-	rl.question("Classify: " + item.title + " ", trainItem);
+	rl.question("Classify: " + item.title + " ", (answer)=> trainItem(item.id, answer));
 }
 
-function trainItem(answer)
+function trainItem(feedpost_id, answer = "")
 {
-	console.log("a: "+answer);
+	if(answer != "") {
+		storeTrain(feedpost_id, answer);
+	} else {
+		console.log("Skipped");
+	}
 	workTrainingQueue();
 }
 
+
+function storeTrain(feedpost_id, item_id)
+{
+	connection.query('INSERT INTO training_set (feedpost_id, item_id) VALUES (?, ?);',
+		[feedpost_id, item_id],
+		function (error, res, fields) {
+			if (error)  throw error;
+		});		
+}
 
 function getFeedSet()
 {
@@ -74,3 +91,24 @@ function getItemSet()
 	});				
 }
 
+
+function trainFromDB()
+{
+	connection.query('SELECT training_set.item_id as item_id, feedposts.title as title FROM feedposts, training_set WHERE feedposts.id = training_set.feedpost_id', function (error, res, fields) {
+		if (error)  throw error;
+		//console.table(res);
+		
+		res.forEach(function(item) {
+		  classifier.addDocument(item.title, item.item_id);
+		});
+
+		classifier.train();
+		//console.log(JSON.stringify(classifier));
+		console.table(classifier.getClassifications('coolscan v'));
+
+
+	});			
+
+
+
+}
