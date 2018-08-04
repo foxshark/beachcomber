@@ -69,12 +69,19 @@ ORDER BY price_delta ASC;
 
 
 #########  5/8/18
+truncate feedposts_items;
+truncate item_values;
 INSERT INTO feedposts_items 
 (feedpost_id, item_id, source_feed)
 SELECT feedposts.id, items.id as item_id, items.feed_id
 FROM feedposts, items
 WHERE SUBSTRING_INDEX(LCASE(REPLACE(CONCAT(" ", feedposts.title, " "),"-","")), "for", 1) like CONCAT("% ", items.name, " %")
 AND feedposts.feed_id = items.feed_id;
+
+#bulk mark processed
+UPDATE feedposts, feedposts_items
+SET feedposts.processed = 1
+WHERE feedposts.id = feedposts_items.feedpost_id;
 
 
 REPLACE INTO item_values
@@ -85,4 +92,71 @@ WHERE feedposts.id = feedposts_items.feedpost_id
 GROUP BY item_id;
 
 
+###
+truncate unknown_gear;
+INSERT INTO unknown_gear
+(brand_id, feedposts_id, title, raw_title, feed_id)
+SELECT brands.id AS brand_id, feedposts.id, SUBSTRING(LCASE(feedposts.title), (INSTR(LCASE(feedposts.title), LCASE(brands.name))+length(brands.name))) as raw_title, feedposts.title, feedposts.feed_id as feed_id
+FROM feedposts, brands
+WHERE feedposts.processed = 0
+AND feedposts.title like concat("%",brands.name," %");
 
+
+SELECT brands.name as brandname, SUBSTRING_INDEX(TRIM(title), " ", 1) AS word, feeds.id, feeds.name, count(1) AS qty
+FROM unknown_gear, brands, feeds
+WHERE unknown_gear.brand_id = brands.id
+AND unknown_gear.feed_id = feeds.id
+GROUP BY word
+ORDER BY brandname, qty DESC
+;
+
+
+//attempting keyword breakdown matching
+SELECT *
+FROM keywords
+#get keywords
+WHERE ((keyword IN ("NIKKOR","70-200mm","f/2.8","II","G","SWM","AF-S","VR","IF ","ED")
+AND synonym IS NULL)
+#and alternates
+OR id IN (
+	SELECT synonym
+	FROM keywords
+	WHERE keyword IN ("NIKKOR","70-200mm","f/2.8","II","G","SWM","AF-S","VR","IF ","ED")
+	AND synonym IS NOT NULL
+))
+#of the known brand or brand-less
+AND ( parent = 5
+OR parent IS NULL);
+
+# select keyword based blocks based derived from direct or synonyms
+SELECT *
+FROM keywords
+WHERE id IN (
+	SELECT ref
+	FROM keywords
+	WHERE keyword IN ("NIKKOR","70-200mm","f/2.8","II","G","SWM","AF-S","VR","IF ","ED")
+)
+AND ( parent = 5
+OR parent IS NULL);
+
+# find best missed deals
+SELECT *
+FROM (
+SELECT title, price, DATE_FORMAT(FROM_UNIXTIME(pubdatetime), '%c/%d %H:%i') as posted, DATE_FORMAT(FROM_UNIXTIME(soldtime), '%c/%d %H:%i') as ended, ABS((soldtime-pubdatetime)) AS timealive, SEC_TO_TIME(soldtime-pubdatetime) as fancytime, guid
+FROM feedposts
+WHERE soldtime IS NOT NULL
+ORDER BY soldtime DESC
+LIMIT 10000
+) as subsel
+WHERE timealive < 86400
+AND timealive > 1
+ORDER BY timealive ASC;
+
+
+#find best missed deals
+SELECT solditems.title, cost, time_on_market, guid
+FROM solditems, feedposts
+WHERE solditems.item_hash = feedposts.item_hash
+AND time_on_market % 86400 != 0 #take out items that end on a 24hr mark
+ORDER BY solditems.time_on_market ASC
+LIMIT 200;
